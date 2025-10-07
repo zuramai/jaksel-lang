@@ -1,53 +1,11 @@
 use logos::{Logos};
 
+use crate::span::Span;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: Span
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Span {
-    pub start: u32,
-    pub end: u32
-}
-
-impl Span {
-    #[inline]
-    pub fn empty() -> Self {
-        Self {
-            start: 0,
-            end: 0
-        }
-    }
-
-    #[inline]
-    pub fn start(self) -> usize {
-        return self.start as usize;
-    }
-
-    #[inline]
-    pub fn end(self) -> usize {
-        return self.end as usize;
-    }
-}
-
-impl From<std::ops::Range<usize>> for Span {
-    fn from(value: std::ops::Range<usize>) -> Self {
-        Self {
-            start: value.start as u32,
-            end: value.end as u32,
-        }
-    }
-}
-
-impl From<Span> for std::ops::Range<usize> {
-    fn from(value: Span) -> Self {
-        Self {
-            start: value.start as usize,
-            end: value.end as usize,
-        }
-    }
 }
 
 #[derive(Logos, Debug, PartialEq, Clone)]
@@ -64,6 +22,7 @@ pub enum TokenKind {
     #[token("{")] TOK_LBRACE,
     #[token("}")] TOK_RBRACE,
     
+    #[token(",")] COMMA,
     #[token("-")] OP_MINUS,
     #[token("+")] OP_PLUS,
     #[token("*")] OP_STAR,

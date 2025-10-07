@@ -1,8 +1,11 @@
-use crate::{lexer::lex, program::parse_program};
+use crate::{lexer::lex, parser::parse_program};
 
+pub mod stmt;
 pub mod lexer;
 pub mod cursor;
-pub mod program;
+pub mod parser;
+pub mod error;
+pub mod span;
 
 fn main() {
     dbg!(lex("fn main() {"));

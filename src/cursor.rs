@@ -8,35 +8,45 @@ pub struct Cursor<'src> {
 }
 
 impl<'src> Cursor<'src> {
-    fn advance(&mut self) {
+    pub fn advance(&mut self) {
         if &self.position >= &self.tokens.len() {
             return;
         }
         self.position += 1;
     }
-    fn current(&self) -> Token {
+    pub fn lexeme(&self, token: Token) -> &'src str {
+        &self.code[token.span]
+    }
+    pub fn current(&self) -> Token {
         self.tokens[self.position].clone()
     }
-    fn previous(&self) -> Token {
+    pub fn previous(&self) -> Token {
         self.tokens[self.position - 1].clone()
     }
-    fn kind(&self) -> TokenKind {
+    pub fn kind(&self) -> TokenKind {
         self.current().kind
     }
-    fn at(&self, kind: TokenKind) -> bool {
+    pub fn at(&self, kind: TokenKind) -> bool {
         self.kind() == kind
     }
-    fn was(&self, token: Token) -> bool {
+
+    /// check current if position - 1  is `token`
+    pub fn was(&self, token: Token) -> bool {
         self.position - 1 > 0 && self.tokens[self.position-1] == token
     }
-    fn eat(&mut self, kind: TokenKind) -> bool {
+
+    /// Returns `true` and advances
+    /// if the current token matches `kind`
+    pub fn eat(&mut self, kind: TokenKind) -> bool {
         if self.at(kind) {
             self.advance();
             return true
         }
         false
     }
-    fn must(&mut self, kind: TokenKind) -> Result<Token, String> {
+
+    /// eat current token or error
+    pub fn must(&mut self, kind: TokenKind) -> Result<Token, String> {
         let current = self.current();
         if self.eat(kind) {
             Ok(current)
