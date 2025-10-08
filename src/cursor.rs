@@ -1,4 +1,4 @@
-use crate::lexer::{self, Token, TokenKind};
+use crate::{error::{error, Result}, lexer::{self, Token, TokenKind}};
 
 
 pub struct Cursor<'src> {
@@ -30,9 +30,10 @@ impl<'src> Cursor<'src> {
         self.kind() == kind
     }
 
+
     /// check current if position - 1  is `token`
-    pub fn was(&self, token: Token) -> bool {
-        self.position - 1 > 0 && self.tokens[self.position-1] == token
+    pub fn was(&self, token: TokenKind) -> bool {
+        self.position - 1 > 0 && self.previous().kind == token
     }
 
     /// Returns `true` and advances
@@ -46,12 +47,12 @@ impl<'src> Cursor<'src> {
     }
 
     /// eat current token or error
-    pub fn must(&mut self, kind: TokenKind) -> Result<Token, String> {
+    pub fn must(&mut self, kind: TokenKind) -> Result<Token> {
         let current = self.current();
         if self.eat(kind) {
             Ok(current)
         } else {
-            Err(format!("expected: {:?}, found {:?}", current.kind, current.span))
+            Err(error(current.span, "expected: {:?}, found {:?}"))
         }
     }
 }

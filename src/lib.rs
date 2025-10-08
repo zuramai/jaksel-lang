@@ -1,6 +1,6 @@
 use crate::{lexer::lex, parser::parse_program};
 
-pub mod stmt;
+pub mod ast;
 pub mod lexer;
 pub mod cursor;
 pub mod parser;
