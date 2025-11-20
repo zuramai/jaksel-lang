@@ -8,6 +8,9 @@ pub mod parser;
 pub mod error;
 pub mod span;
 
+#[cfg(test)]
+pub mod tests;
+
 
 fn parse(code: &str) -> Result<Program> {  
     let mut cursor = cursor::Cursor {

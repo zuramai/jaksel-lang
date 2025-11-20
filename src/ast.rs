@@ -20,8 +20,8 @@ pub struct StmtFn {
 }
 #[derive(Debug)]
 pub struct StmtLet {
-    name: String,
-    value: String,
+    pub name: String,
+    pub value: Expr,
 }
 
 #[derive(Debug)]

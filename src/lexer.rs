@@ -21,6 +21,7 @@ pub enum TokenKind {
     #[token(")")] TOK_RPAREN,
     #[token("{")] TOK_LBRACE,
     #[token("}")] TOK_RBRACE,
+    #[token("wkwk")] TOK_WKWK,
     
     #[token(",")] COMMA,
     #[token("-")] OP_MINUS,

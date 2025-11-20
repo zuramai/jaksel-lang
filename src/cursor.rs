@@ -44,6 +44,7 @@ impl<'src> Cursor<'src> {
             self.advance();
             return true
         }
+        
         false
     }
 
