@@ -1,4 +1,8 @@
-use std::fmt::Formatter;
+#[derive(Debug)]
+pub struct Program {
+    pub body: Vec<Stmt>,
+    pub tail: Option<Expr>
+}
 
 #[derive(Debug)]
 pub enum Stmt {

@@ -14,6 +14,7 @@ impl<'src> Cursor<'src> {
         }
         self.position += 1;
     }
+    /// get the string in a span of a cursor position
     pub fn lexeme(&self, token: Token) -> &'src str {
         &self.code[token.span]
     }

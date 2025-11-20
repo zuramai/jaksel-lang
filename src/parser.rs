@@ -1,16 +1,31 @@
-use std::intrinsics::unreachable;
-
-use crate::ast::{Block, Stmt, StmtFn};
+use crate::ast::*;
 use crate::cursor::Cursor;
 use crate::error::Result;
 use crate::lexer::TokenKind;
 
-pub fn parse_program(c: &mut Cursor) {
+pub fn parse_program(c: &mut Cursor) -> Result<Program> {
     let mut body = Vec::new();
     while !c.at(crate::lexer::TokenKind::TOK_EOF) {
         body.push(parse_stmt(c)?)
     }
+
+    let trailing_semi = c.was(TokenKind::TOK_SEMI);
+    let tail = if !trailing_semi 
+        && let Some(tail) = body.last()
+        && let Stmt::Expr(_) = tail
+    {
+        let tail = match body.pop().unwrap() {
+            Stmt::Expr(tail) => *tail,
+            _ => unreachable!()
+        };
+        Some(tail)
+    } else {
+        None
+    };
+    Ok(Program { body, tail })
 }
+
+/// parse the statement based on the keyword of the cursor position
 fn parse_stmt(c: &mut Cursor) -> Result<Stmt> {
     match c.kind() {
         TokenKind::KW_FN => parse_stmt_fn(c),
@@ -19,21 +34,23 @@ fn parse_stmt(c: &mut Cursor) -> Result<Stmt> {
     }
 }
 
+/// read the function name, the params, and the body
 fn parse_stmt_fn(c: &mut Cursor) -> Result<Stmt> {
     assert!(c.eat(TokenKind::KW_FN));
-    let name = parse_ident(c)?;
+    let name = parse_identifier(c)?;
     let params = parse_param_list(c)?;
     let body = parse_block(c)?;
     Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
 }
 
-fn parse_ident(c: &mut Cursor) -> Result<String> {
+/// parse the name as a token
+fn parse_identifier(c: &mut Cursor) -> Result<String> {
     let token = c.must(TokenKind::LIT_IDENT)?;
     Ok(c.lexeme(token).to_owned())
 }
 
 fn parse_param_list(c: &mut Cursor) -> Result<Vec<String>> {
-    parse_paren_list(c, parse_ident)
+    parse_paren_list(c, parse_identifier)
 }
 
 /// get all identifier inside parentheses
@@ -48,14 +65,14 @@ where
     c.must(TokenKind::TOK_LPAREN)?;
     while !c.at(TokenKind::TOK_RPAREN) {
         loop {
-            params.push(parse_ident(c)?);
+            params.push(elem(c)?);
 
             if !c.eat(TokenKind::COMMA) || c.at(TokenKind::TOK_RPAREN) {
                 break;
             }
         }
     }
-    c.must(TokenKind::TOK_RPAREN);
+    c.must(TokenKind::TOK_RPAREN)?;
     Ok(params)
 }
 
@@ -89,7 +106,7 @@ fn parse_block(c: &mut Cursor) -> Result<Block> {
 
 fn parse_stmt_let(c: &mut Cursor) -> Result<Stmt> {
     assert!(c.eat(TokenKind::KW_LET));
-    let name = parse_ident(c)?;
+    let name = parse_identifier(c)?;
     let params = parse_param_list(c)?;
     let body = parse_block(c)?;
     Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
@@ -97,7 +114,7 @@ fn parse_stmt_let(c: &mut Cursor) -> Result<Stmt> {
 
 fn parse_stmt_expr(c: &mut Cursor) -> Result<Stmt> {
     assert!(c.eat(TokenKind::KW_LET));
-    let name = parse_ident(c)?;
+    let name = parse_identifier(c)?;
     let params = parse_param_list(c)?;
     let body = parse_block(c)?;
     Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
