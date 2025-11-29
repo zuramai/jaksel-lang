@@ -1,7 +1,7 @@
 ---
 source: src/tests.rs
 assertion_line: 21
-expression: parse(&input)
+expression: res
 ---
 Fn(
     StmtFn {

@@ -21,5 +21,8 @@ fn parse(code: &str) -> String {
 #[glob_test::glob("./inputs/**/*.jks")]
 fn test_parse(path: &Path) {
     let input = std::fs::read_to_string(path).unwrap();
-    insta::assert_snapshot!(parse(&input));
+    let res = parse(&input);
+    // Don't specify a custom name - let insta auto-generate it
+    // This will match the expected snapshot file naming
+    insta::assert_snapshot!(res);
 }

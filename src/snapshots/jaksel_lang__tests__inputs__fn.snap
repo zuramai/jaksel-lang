@@ -1,0 +1,51 @@
+---
+source: src/tests.rs
+expression: res
+---
+Fn(
+    StmtFn {
+        name: "anjay",
+        params: [],
+        body: Block {
+            body: [
+                Let(
+                    StmtLet {
+                        name: "a",
+                        value: Binary(
+                            ExprBinary {
+                                lhs: Int(
+                                    ExprInt {
+                                        value: 1,
+                                    },
+                                ),
+                                op: Add,
+                                rhs: Int(
+                                    ExprInt {
+                                        value: 1,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+            ],
+            tail: Some(
+                Binary(
+                    ExprBinary {
+                        lhs: Identifier(
+                            ExprIdent {
+                                name: "b",
+                            },
+                        ),
+                        op: Add,
+                        rhs: Identifier(
+                            ExprIdent {
+                                name: "a",
+                            },
+                        ),
+                    },
+                ),
+            ),
+        },
+    },
+)

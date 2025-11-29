@@ -9,4 +9,4 @@ thiserror = "2.0.17"
 
 [dev-dependencies]
 glob_test = "0.1.0"
-insta = "1.44.0"
+insta = { version = "1.44.0", features = ["yaml"] }

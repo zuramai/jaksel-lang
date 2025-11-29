@@ -1,0 +1,25 @@
+---
+source: src/tests.rs
+assertion_line: 21
+expression: res
+---
+Let(
+    StmtLet {
+        name: "a",
+        value: Binary(
+            ExprBinary {
+                lhs: Int(
+                    ExprInt {
+                        value: 1,
+                    },
+                ),
+                op: Add,
+                rhs: Int(
+                    ExprInt {
+                        value: 1,
+                    },
+                ),
+            },
+        ),
+    },
+)
