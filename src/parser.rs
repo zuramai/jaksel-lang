@@ -109,16 +109,22 @@ fn parse_stmt_let(c: &mut Cursor) -> Result<Stmt> {
     let name = parse_identifier(c)?;
     c.must(TokenKind::OP_EQ)?;
     let value = parse_expr(c)?;
-    c.must(TokenKind::TOK_WKWK)?;
+    c.must(TokenKind::TOK_SEMI)?;
     Ok(Stmt::Let(Box::new(StmtLet { name, value })))
 }
 
 fn parse_stmt_expr(c: &mut Cursor) -> Result<Stmt> {
-    assert!(c.eat(TokenKind::KW_LET), "unexpected token");
-    let name = parse_identifier(c)?;
-    let params = parse_param_list(c)?;
-    let body = parse_block(c)?;
-    Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
+    let expr = parse_expr(c)?;
+
+    // check if the next token is semicolon
+    let semi = c.eat(TokenKind::TOK_SEMI);
+    if !semi && !c.at(TokenKind::TOK_EOF) && !c.at(TokenKind::TOK_RBRACE) {
+        return Err(error(
+            c.current().span,
+            format!("expected semicolon, got {:?}", c.kind())
+        ));
+    }
+    Ok(Stmt::Expr(Box::new(expr)))
 }
 
 fn parse_expr(c: &mut Cursor) -> Result<Expr> {
