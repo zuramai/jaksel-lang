@@ -18,11 +18,17 @@ impl<'src> Cursor<'src> {
     pub fn lexeme(&self, token: Token) -> &'src str {
         &self.code[token.span]
     }
+    pub fn current_lexeme(&self) -> &'src str {
+        &self.code[self.current().span]
+    }
     pub fn current(&self) -> Token {
         self.tokens[self.position].clone()
     }
     pub fn previous(&self) -> Token {
         self.tokens[self.position - 1].clone()
+    }
+    pub fn peek(&self) -> Token {
+        self.tokens[self.position + 1].clone()
     }
     pub fn kind(&self) -> TokenKind {
         self.current().kind
@@ -51,10 +57,10 @@ impl<'src> Cursor<'src> {
     /// eat current token or error
     pub fn must(&mut self, kind: TokenKind) -> Result<Token> {
         let current = self.current();
-        if self.eat(kind) {
+        if self.eat(kind.clone()) {
             Ok(current)
         } else {
-            Err(error(current.span, "expected: {:?}, found {:?}"))
+            Err(error(current.span, format!("expected: {:?}, found {:?}", kind, current.kind)))
         }
     }
 }

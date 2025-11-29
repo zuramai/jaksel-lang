@@ -1,6 +1,6 @@
 use crate::ast::*;
 use crate::cursor::Cursor;
-use crate::error::Result;
+use crate::error::{Result, error};
 use crate::lexer::TokenKind;
 
 pub fn parse_program(c: &mut Cursor) -> Result<Program> {
@@ -105,25 +105,164 @@ fn parse_block(c: &mut Cursor) -> Result<Block> {
 }
 
 fn parse_stmt_let(c: &mut Cursor) -> Result<Stmt> {
-    assert!(c.eat(TokenKind::KW_LET));
+    c.eat(TokenKind::KW_LET);
     let name = parse_identifier(c)?;
-    let params = parse_param_list(c)?;
-    let body = parse_block(c)?;
-    Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
+    c.must(TokenKind::OP_EQ)?;
+    let value = parse_expr(c)?;
+    c.must(TokenKind::TOK_WKWK)?;
+    Ok(Stmt::Let(Box::new(StmtLet { name, value })))
 }
 
 fn parse_stmt_expr(c: &mut Cursor) -> Result<Stmt> {
-    assert!(c.eat(TokenKind::KW_LET));
+    assert!(c.eat(TokenKind::KW_LET), "unexpected token");
     let name = parse_identifier(c)?;
     let params = parse_param_list(c)?;
     let body = parse_block(c)?;
     Ok(Stmt::Fn(Box::new(StmtFn { name, params, body })))
 }
 
+fn parse_expr(c: &mut Cursor) -> Result<Expr> {
+    // start with 0 binding power
+    parse_expr_bp(c, 0)
+}
 
+// parse recursive
+fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
+    let mut lhs = parse_primary(c)?;
+    loop {
+        let op_kind = c.kind();
+        
+        let Some(bp) = binding_power(&op_kind) else {
+            break;
+        };
 
-pub struct StmtLet {
-    name: String,
-    params: Vec<String>,
-    body: Block
+        dbg!(&bp, &min_bp);
+
+        if bp < min_bp {
+            break;
+        }
+
+        match op_kind {
+            // if binary operator, parse binary operator
+            TokenKind::OP_PLUS | TokenKind::OP_MINUS |
+            TokenKind::OP_STAR |  TokenKind::OP_SLASH |
+            TokenKind::OP_LT | TokenKind::OP_GT |
+            TokenKind::OP_NEQ | TokenKind::OP_EQEQ | 
+            TokenKind::OP_AND | TokenKind::OP_OR |
+            TokenKind::OP_LE | TokenKind::OP_GE => {
+                c.advance();
+                let op: BinaryOp = op_kind.clone().into();
+                let rhs = parse_expr_bp(c, bp+1)?;
+                lhs = Expr::Binary(Box::new(ExprBinary { lhs, op, rhs }))
+            },
+            // if open parentheses, parse the parentheses content
+            TokenKind::TOK_LPAREN => {
+                let args = parse_arg_list(c)?;
+                lhs = Expr::Call(Box::new(ExprCall { args, callee: lhs }))
+            }
+            _ => break
+
+        }
+
+    }
+    Ok(lhs)
+}
+
+fn parse_arg_list(c: &mut Cursor) -> Result<Vec<Expr>> {
+    let mut args = Vec::new();
+    c.must(TokenKind::TOK_LPAREN)?;
+    while !c.at(TokenKind::TOK_RPAREN) {
+        args.push(parse_expr(c)?);
+        if !c.eat(TokenKind::COMMA) {
+            break;
+        }
+    };
+    
+    c.must(TokenKind::TOK_RPAREN)?;
+
+    Ok(args)
+}
+
+fn binding_power(kind: &TokenKind) -> Option<u8> {
+    Some(match kind {
+        TokenKind::OP_OR => 1,
+        TokenKind::OP_AND => 2,
+        TokenKind::OP_EQEQ | TokenKind::OP_NEQ => 3,
+        TokenKind::OP_LT | TokenKind::OP_LE => 4,
+        TokenKind::OP_GT | TokenKind::OP_GE => 5,
+        TokenKind::OP_PLUS | TokenKind::OP_MINUS => 6,
+        TokenKind::OP_STAR | TokenKind::OP_SLASH => 6,
+        TokenKind::TOK_LPAREN => 8,
+        _ => return None,
+    })
+}
+
+fn parse_primary(c: &mut Cursor) -> Result<Expr> {
+    dbg!(&c.current());
+    let next_token = c.peek();
+    match c.kind() {
+        TokenKind::LIT_INT => {
+            let value = c.current_lexeme().parse::<i64>().unwrap();
+            c.advance();
+            Ok(Expr::Int(Box::new(ExprInt { value })))
+        }
+        TokenKind::LIT_STR => {
+            let value = c.current_lexeme().trim_matches('"').to_string();
+            c.advance();
+            Ok(Expr::Str(Box::new(ExprStr { value })))
+        },
+        TokenKind::LIT_IDENT => {
+            let name = parse_identifier(c)?;
+            Ok(Expr::Identifier(Box::new(ExprIdent { name })))
+        },
+        TokenKind::TOK_LPAREN => {
+            c.must(TokenKind::TOK_LPAREN);
+            let expr = parse_expr(c)?;
+            c.must(TokenKind::TOK_RPAREN);
+            Ok(expr)
+        },
+        TokenKind::TOK_LBRACE => {
+            let block = parse_block(c)?;
+            Ok(Expr::Block(Box::new(block)))
+        },
+        TokenKind::KW_IF => {
+            parse_expr_if(c)
+        },
+        // parse -x
+        TokenKind::OP_MINUS | TokenKind::OP_BANG => {
+            let op = if next_token.kind == TokenKind::OP_MINUS {
+                UnaryOp::Minus
+            } else {
+                UnaryOp::Not
+            };
+            let op_token = c.advance();
+            // unary has high binding power, bcs it's directly tied to the expression
+            let rhs = parse_expr_bp(c, 7)?;
+            Ok(Expr::Unary(Box::new(ExprUnary { rhs, op })))
+        }
+        _ => Err(error(c.current().span, format!("Unexpected token error: {}", c.current_lexeme())))
+    }
+}
+
+fn parse_expr_if(c: &mut Cursor) -> Result<Expr> {
+    c.must(TokenKind::KW_IF)?;
+    // parse the parentheses
+    let cond = parse_expr(c)?;
+    let body = parse_block(c)?;
+    let mut branches = vec![IfBranch { cond, body }];
+    let mut tail = None;
+
+    while c.eat(TokenKind::KW_ELSE) {
+        if c.eat(TokenKind::KW_IF) {
+            let cond = parse_expr(c)?;
+            let body = parse_block(c)?;
+            branches.push(IfBranch { cond, body })
+        } else {
+            tail = Some(parse_block(c)?);
+            break;
+        }
+    }
+
+    Ok(Expr::If(Box::new(ExprIf{branches, tail})))
+
 }

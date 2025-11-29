@@ -1,6 +1,6 @@
 use logos::{Logos};
 
-use crate::span::Span;
+use crate::{ast::BinaryOp, span::Span};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
@@ -69,4 +69,24 @@ pub fn lex(src: &str) -> Vec<Token> {
             span: Span::empty()
         }])
         .collect()
+}
+
+impl Into<BinaryOp> for TokenKind {
+    fn into(self) -> BinaryOp {
+        match self {
+            Self::OP_PLUS => BinaryOp::Add,
+            Self::OP_MINUS => BinaryOp::Subtract,
+            Self::OP_SLASH => BinaryOp::Divide,
+            Self::OP_STAR => BinaryOp::Multiply,
+            Self::OP_OR => BinaryOp::Or,
+            Self::OP_AND => BinaryOp::And,
+            Self::OP_LT => BinaryOp::LessThan,
+            Self::OP_EQEQ => BinaryOp::Equal,
+            Self::OP_GT => BinaryOp::GreaterThan,
+            Self::OP_GE => BinaryOp::GreaterOrEqual,
+            Self::OP_LE => BinaryOp::LessOrEqual,
+            Self::OP_NEQ => BinaryOp::NotEqual,
+            _ => unreachable!()
+        }
+    }
 }
