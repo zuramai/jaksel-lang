@@ -14,7 +14,7 @@ fn parse(code: &str) -> String {
             }
             o
         }
-        Err(err) => format!("{:?}", err),
+        Err(err) => format!("Error {:?}", err),
     }
 }
 

@@ -142,7 +142,6 @@ fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
             break;
         };
 
-        dbg!(&bp, &min_bp);
 
         if bp < min_bp {
             break;
@@ -204,7 +203,6 @@ fn binding_power(kind: &TokenKind) -> Option<u8> {
 }
 
 fn parse_primary(c: &mut Cursor) -> Result<Expr> {
-    dbg!(&c.current());
     let next_token = c.peek();
     match c.kind() {
         TokenKind::LIT_INT => {
