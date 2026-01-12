@@ -142,7 +142,6 @@ fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
             break;
         };
 
-
         if bp < min_bp {
             break;
         }
@@ -155,10 +154,11 @@ fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
             TokenKind::OP_NEQ | TokenKind::OP_EQEQ | 
             TokenKind::OP_AND | TokenKind::OP_OR |
             TokenKind::OP_LE | TokenKind::OP_GE => {
+                let op_span = c.current().span;
                 c.advance();
                 let op: BinaryOp = op_kind.clone().into();
                 let rhs = parse_expr_bp(c, bp+1)?;
-                lhs = Expr::Binary(Box::new(ExprBinary { lhs, op, rhs }))
+                lhs = Expr::Binary(Box::new(ExprBinary { lhs, op, rhs, span: op_span }))
             },
             // if open parentheses, parse the parentheses content
             TokenKind::TOK_LPAREN => {
@@ -220,9 +220,9 @@ fn parse_primary(c: &mut Cursor) -> Result<Expr> {
             Ok(Expr::Identifier(Box::new(ExprIdent { name })))
         },
         TokenKind::TOK_LPAREN => {
-            c.must(TokenKind::TOK_LPAREN);
+            c.must(TokenKind::TOK_LPAREN)?;
             let expr = parse_expr(c)?;
-            c.must(TokenKind::TOK_RPAREN);
+            c.must(TokenKind::TOK_RPAREN)?;
             Ok(expr)
         },
         TokenKind::TOK_LBRACE => {
@@ -239,7 +239,7 @@ fn parse_primary(c: &mut Cursor) -> Result<Expr> {
             } else {
                 UnaryOp::Not
             };
-            let op_token = c.advance();
+            c.advance();
             // unary has high binding power, bcs it's directly tied to the expression
             let rhs = parse_expr_bp(c, 7)?;
             Ok(Expr::Unary(Box::new(ExprUnary { rhs, op })))

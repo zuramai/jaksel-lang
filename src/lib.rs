@@ -7,6 +7,7 @@ pub mod cursor;
 pub mod parser;
 pub mod error;
 pub mod span;
+pub mod eval;
 
 #[cfg(test)]
 pub mod tests;
