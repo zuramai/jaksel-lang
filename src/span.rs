@@ -1,19 +1,15 @@
 use std::ops::{Index, Range};
 
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Span {
     pub start: u32,
-    pub end: u32
+    pub end: u32,
 }
 
 impl Span {
     #[inline]
     pub fn empty() -> Self {
-        Self {
-            start: 0,
-            end: 0
-        }
+        Self { start: 0, end: 0 }
     }
 
     #[inline]

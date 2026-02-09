@@ -10,13 +10,13 @@ pub fn parse_program(c: &mut Cursor) -> Result<Program> {
     }
 
     let trailing_semi = c.was(TokenKind::TOK_SEMI);
-    let tail = if !trailing_semi 
+    let tail = if !trailing_semi
         && let Some(tail) = body.last()
         && let Stmt::Expr(_) = tail
     {
         let tail = match body.pop().unwrap() {
             Stmt::Expr(tail) => *tail,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         Some(tail)
     } else {
@@ -30,7 +30,7 @@ fn parse_stmt(c: &mut Cursor) -> Result<Stmt> {
     match c.kind() {
         TokenKind::KW_FN => parse_stmt_fn(c),
         TokenKind::KW_LET => parse_stmt_let(c),
-        _ => parse_stmt_expr(c)
+        _ => parse_stmt_expr(c),
     }
 }
 
@@ -54,11 +54,8 @@ fn parse_param_list(c: &mut Cursor) -> Result<Vec<String>> {
 }
 
 /// get all identifier inside parentheses
-fn parse_paren_list<F, T>(
-    c: &mut Cursor, 
-    mut elem: F,
-) -> Result<Vec<T>>
-where 
+fn parse_paren_list<F, T>(c: &mut Cursor, mut elem: F) -> Result<Vec<T>>
+where
     F: FnMut(&mut Cursor) -> Result<T>,
 {
     let mut params = Vec::new();
@@ -83,18 +80,17 @@ fn parse_block(c: &mut Cursor) -> Result<Block> {
     while !c.at(TokenKind::TOK_RBRACE) {
         body.push(parse_stmt(c)?);
     }
-    
+
     let trailing_semi = c.was(TokenKind::TOK_SEMI);
     c.must(TokenKind::TOK_RBRACE)?;
 
-
-    let tail =   if !trailing_semi 
-        && let Some(tail) = body.last() 
-        && let Stmt::Expr(_) = tail 
+    let tail = if !trailing_semi
+        && let Some(tail) = body.last()
+        && let Stmt::Expr(_) = tail
     {
         let tail = match body.pop().unwrap() {
             Stmt::Expr(tail) => *tail,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         Some(tail)
     } else {
@@ -121,7 +117,7 @@ fn parse_stmt_expr(c: &mut Cursor) -> Result<Stmt> {
     if !semi && !c.at(TokenKind::TOK_EOF) && !c.at(TokenKind::TOK_RBRACE) {
         return Err(error(
             c.current().span,
-            format!("expected semicolon, got {:?}", c.kind())
+            format!("expected semicolon, got {:?}", c.kind()),
         ));
     }
     Ok(Stmt::Expr(Box::new(expr)))
@@ -137,7 +133,7 @@ fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
     let mut lhs = parse_primary(c)?;
     loop {
         let op_kind = c.kind();
-        
+
         let Some(bp) = binding_power(&op_kind) else {
             break;
         };
@@ -148,27 +144,36 @@ fn parse_expr_bp(c: &mut Cursor, min_bp: u8) -> Result<Expr> {
 
         match op_kind {
             // if binary operator, parse binary operator
-            TokenKind::OP_PLUS | TokenKind::OP_MINUS |
-            TokenKind::OP_STAR |  TokenKind::OP_SLASH |
-            TokenKind::OP_LT | TokenKind::OP_GT |
-            TokenKind::OP_NEQ | TokenKind::OP_EQEQ | 
-            TokenKind::OP_AND | TokenKind::OP_OR |
-            TokenKind::OP_LE | TokenKind::OP_GE => {
+            TokenKind::OP_PLUS
+            | TokenKind::OP_MINUS
+            | TokenKind::OP_STAR
+            | TokenKind::OP_SLASH
+            | TokenKind::OP_LT
+            | TokenKind::OP_GT
+            | TokenKind::OP_NEQ
+            | TokenKind::OP_EQEQ
+            | TokenKind::OP_AND
+            | TokenKind::OP_OR
+            | TokenKind::OP_LE
+            | TokenKind::OP_GE => {
                 let op_span = c.current().span;
                 c.advance();
                 let op: BinaryOp = op_kind.clone().into();
-                let rhs = parse_expr_bp(c, bp+1)?;
-                lhs = Expr::Binary(Box::new(ExprBinary { lhs, op, rhs, span: op_span }))
-            },
+                let rhs = parse_expr_bp(c, bp + 1)?;
+                lhs = Expr::Binary(Box::new(ExprBinary {
+                    lhs,
+                    op,
+                    rhs,
+                    span: op_span,
+                }))
+            }
             // if open parentheses, parse the parentheses content
             TokenKind::TOK_LPAREN => {
                 let args = parse_arg_list(c)?;
                 lhs = Expr::Call(Box::new(ExprCall { args, callee: lhs }))
             }
-            _ => break
-
+            _ => break,
         }
-
     }
     Ok(lhs)
 }
@@ -181,8 +186,8 @@ fn parse_arg_list(c: &mut Cursor) -> Result<Vec<Expr>> {
         if !c.eat(TokenKind::COMMA) {
             break;
         }
-    };
-    
+    }
+
     c.must(TokenKind::TOK_RPAREN)?;
 
     Ok(args)
@@ -214,24 +219,22 @@ fn parse_primary(c: &mut Cursor) -> Result<Expr> {
             let value = c.current_lexeme().trim_matches('"').to_string();
             c.advance();
             Ok(Expr::Str(Box::new(ExprStr { value })))
-        },
+        }
         TokenKind::LIT_IDENT => {
             let name = parse_identifier(c)?;
             Ok(Expr::Identifier(Box::new(ExprIdent { name })))
-        },
+        }
         TokenKind::TOK_LPAREN => {
             c.must(TokenKind::TOK_LPAREN)?;
             let expr = parse_expr(c)?;
             c.must(TokenKind::TOK_RPAREN)?;
             Ok(expr)
-        },
+        }
         TokenKind::TOK_LBRACE => {
             let block = parse_block(c)?;
             Ok(Expr::Block(Box::new(block)))
-        },
-        TokenKind::KW_IF => {
-            parse_expr_if(c)
-        },
+        }
+        TokenKind::KW_IF => parse_expr_if(c),
         // parse -x
         TokenKind::OP_MINUS | TokenKind::OP_BANG => {
             let op = if next_token.kind == TokenKind::OP_MINUS {
@@ -244,7 +247,10 @@ fn parse_primary(c: &mut Cursor) -> Result<Expr> {
             let rhs = parse_expr_bp(c, 7)?;
             Ok(Expr::Unary(Box::new(ExprUnary { rhs, op })))
         }
-        _ => Err(error(c.current().span, format!("Unexpected token error: {}", c.current_lexeme())))
+        _ => Err(error(
+            c.current().span,
+            format!("Unexpected token error: {}", c.current_lexeme()),
+        )),
     }
 }
 
@@ -267,6 +273,5 @@ fn parse_expr_if(c: &mut Cursor) -> Result<Expr> {
         }
     }
 
-    Ok(Expr::If(Box::new(ExprIf{branches, tail})))
-
+    Ok(Expr::If(Box::new(ExprIf { branches, tail })))
 }

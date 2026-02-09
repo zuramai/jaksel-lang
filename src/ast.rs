@@ -1,22 +1,21 @@
 #[derive(Debug)]
 pub struct Program {
     pub body: Vec<Stmt>,
-    pub tail: Option<Expr>
+    pub tail: Option<Expr>,
 }
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
     Fn(Box<StmtFn>),
     Let(Box<StmtLet>),
-    Expr(Box<Expr>)
+    Expr(Box<Expr>),
 }
-
 
 #[derive(Debug, Clone)]
 pub struct StmtFn {
     pub name: String,
     pub params: Vec<String>,
-    pub body: Block
+    pub body: Block,
 }
 #[derive(Debug, Clone)]
 pub struct StmtLet {
@@ -33,19 +32,19 @@ pub enum Expr {
     Identifier(Box<ExprIdent>),
     Call(Box<ExprCall>),
     Binary(Box<ExprBinary>),
-    Unary(Box<ExprUnary>)
+    Unary(Box<ExprUnary>),
 }
 
 #[derive(Debug, Clone)]
 pub struct ExprIf {
     pub branches: Vec<IfBranch>,
-    pub tail: Option<Block>
+    pub tail: Option<Block>,
 }
 
 #[derive(Debug, Clone)]
 pub struct IfBranch {
     pub cond: Expr,
-    pub body: Block, 
+    pub body: Block,
 }
 
 #[derive(Debug, Clone)]
@@ -57,7 +56,7 @@ pub struct ExprBinary {
 }
 
 #[derive(Debug, Clone)]
-pub enum BinaryOp{
+pub enum BinaryOp {
     Add,
     Subtract,
     Multiply,
@@ -69,7 +68,7 @@ pub enum BinaryOp{
     LessThan,
     LessOrEqual,
     GreaterThan,
-    GreaterOrEqual
+    GreaterOrEqual,
 }
 
 #[derive(Debug, Clone)]
@@ -81,36 +80,36 @@ pub struct ExprUnary {
 #[derive(Debug, Clone)]
 pub enum UnaryOp {
     Minus,
-    Not
+    Not,
 }
 
 #[derive(Debug, Clone)]
 pub struct ExprCall {
     pub callee: Expr,
-    pub args: Vec<Expr>
+    pub args: Vec<Expr>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ExprInt {
-    pub value: i64
+    pub value: i64,
 }
 
 #[derive(Debug, Clone)]
 pub struct ExprStr {
-    pub value: String
+    pub value: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct ExprIdent {
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Debug)]
 pub struct ExprBlock {
-    pub inner: Block
+    pub inner: Block,
 }
 #[derive(Debug, Clone)]
 pub struct Block {
     pub body: Vec<Stmt>,
-    pub tail: Option<Expr>
+    pub tail: Option<Expr>,
 }

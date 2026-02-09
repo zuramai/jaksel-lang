@@ -1,10 +1,12 @@
-use crate::{error::{error, Result}, lexer::{self, Token, TokenKind}};
-
+use crate::{
+    error::{Result, error},
+    lexer::{self, Token, TokenKind},
+};
 
 pub struct Cursor<'src> {
     pub code: &'src str,
     pub tokens: Vec<Token>,
-    pub position: usize
+    pub position: usize,
 }
 
 impl<'src> Cursor<'src> {
@@ -37,7 +39,6 @@ impl<'src> Cursor<'src> {
         self.kind() == kind
     }
 
-
     /// check current if position - 1  is `token`
     pub fn was(&self, token: TokenKind) -> bool {
         self.position - 1 > 0 && self.previous().kind == token
@@ -48,9 +49,9 @@ impl<'src> Cursor<'src> {
     pub fn eat(&mut self, kind: TokenKind) -> bool {
         if self.at(kind) {
             self.advance();
-            return true
+            return true;
         }
-        
+
         false
     }
 
@@ -60,7 +61,10 @@ impl<'src> Cursor<'src> {
         if self.eat(kind.clone()) {
             Ok(current)
         } else {
-            Err(error(current.span, format!("expected: {:?}, found {:?}", kind, current.kind)))
+            Err(error(
+                current.span,
+                format!("expected: {:?}, found {:?}", kind, current.kind),
+            ))
         }
     }
 }
