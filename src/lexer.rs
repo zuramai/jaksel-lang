@@ -1,43 +1,68 @@
-use logos::{Logos};
+use logos::Logos;
 
 use crate::{ast::BinaryOp, span::Span};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub span: Span
+    pub span: Span,
 }
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 #[logos(skip r"[ \t\n\r]+")]
 pub enum TokenKind {
-    #[token("fn")] KW_FN,
-    #[token("if")] KW_IF,
-    #[token("else")] KW_ELSE,
-    #[token("let")] KW_LET,
+    #[token("so about")]
+    KW_FN,
+    #[token("kalo")]
+    KW_IF,
+    #[token("kalogak")]
+    KW_ELSE,
+    #[token("literally")]
+    KW_LET,
+    #[token("seriously")]
+    KW_CONST,
 
-    #[token(";")] TOK_SEMI,
-    #[token("(")] TOK_LPAREN,
-    #[token(")")] TOK_RPAREN,
-    #[token("{")] TOK_LBRACE,
-    #[token("}")] TOK_RBRACE,
-    #[token("wkwk")] TOK_WKWK,
-    
-    #[token(",")] COMMA,
-    #[token("-")] OP_MINUS,
-    #[token("+")] OP_PLUS,
-    #[token("*")] OP_STAR,
-    #[token("/")] OP_SLASH,
-    #[token("=")] OP_EQ,
-    #[token("||")] OP_OR,
-    #[token("&&")] OP_AND,
-    #[token("==")] OP_EQEQ,
-    #[token("!=")] OP_NEQ,
-    #[token("<")] OP_LT,
-    #[token("<=")] OP_LE,
-    #[token(">")] OP_GT,
-    #[token(">=")] OP_GE,
-    #[token("!")] OP_BANG,
+    #[token("wkwk")]
+    TOK_SEMI,
+    #[token("(")]
+    TOK_LPAREN,
+    #[token(")")]
+    TOK_RPAREN,
+    #[token("{")]
+    TOK_LBRACE,
+    #[token("}")]
+    TOK_RBRACE,
+
+    #[token(",")]
+    COMMA,
+    #[token("-")]
+    OP_MINUS,
+    #[token("tambah")]
+    OP_PLUS,
+    #[token("kali")]
+    OP_STAR,
+    #[token("bagi")]
+    OP_SLASH,
+    #[token("itu")]
+    OP_EQ,
+    #[token("||")]
+    OP_OR,
+    #[token("&&")]
+    OP_AND,
+    #[token("sama dengan")]
+    OP_EQEQ,
+    #[token("gak")]
+    OP_NEQ,
+    #[token("lebih kecil")]
+    OP_LT,
+    #[token("lebih kecil sama dengan")]
+    OP_LE,
+    #[token("lebih gede")]
+    OP_GT,
+    #[token("lebih gede sama dengan")]
+    OP_GE,
+    #[token("bukan")]
+    OP_BANG,
 
     #[regex(r"[0-9]+")]
     LIT_INT,
@@ -49,7 +74,7 @@ pub enum TokenKind {
     LIT_IDENT,
 
     TOK_ERROR,
-    TOK_EOF
+    TOK_EOF,
 }
 
 pub fn lex(src: &str) -> Vec<Token> {
@@ -58,15 +83,16 @@ pub fn lex(src: &str) -> Vec<Token> {
         .map(|item| match item {
             (Ok(kind), span) => Token {
                 kind,
-                span: span.into()
+                span: span.into(),
             },
             (Err(()), span) => Token {
                 kind: TokenKind::TOK_ERROR,
-                span: span.into()
-            }
-        }).chain([Token{
+                span: span.into(),
+            },
+        })
+        .chain([Token {
             kind: TokenKind::TOK_EOF,
-            span: Span::empty()
+            span: Span::empty(),
         }])
         .collect()
 }
@@ -86,7 +112,7 @@ impl Into<BinaryOp> for TokenKind {
             Self::OP_GE => BinaryOp::GreaterOrEqual,
             Self::OP_LE => BinaryOp::LessOrEqual,
             Self::OP_NEQ => BinaryOp::NotEqual,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
