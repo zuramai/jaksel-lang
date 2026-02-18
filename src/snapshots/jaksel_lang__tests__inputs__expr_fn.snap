@@ -1,0 +1,62 @@
+---
+source: src/tests.rs
+expression: res
+---
+Let(
+    StmtLet {
+        name: "angkadua",
+        value: Int(
+            ExprInt {
+                value: 2,
+            },
+        ),
+    },
+)
+Let(
+    StmtLet {
+        name: "angkasatu",
+        value: Int(
+            ExprInt {
+                value: 1,
+            },
+        ),
+    },
+)
+Fn(
+    StmtFn {
+        name: "tambahin",
+        params: [
+            "satu",
+            "dua",
+        ],
+        body: Block {
+            body: [
+                Let(
+                    StmtLet {
+                        name: "total",
+                        value: Binary(
+                            ExprBinary {
+                                lhs: Identifier(
+                                    ExprIdent {
+                                        name: "angkasatu",
+                                    },
+                                ),
+                                op: Add,
+                                rhs: Identifier(
+                                    ExprIdent {
+                                        name: "angkadua",
+                                    },
+                                ),
+                                span: Span {
+                                    start: 126,
+                                    end: 132,
+                                },
+                            },
+                        ),
+                    },
+                ),
+            ],
+            tail: None,
+        },
+    },
+)
