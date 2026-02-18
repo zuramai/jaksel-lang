@@ -184,19 +184,47 @@ impl Evaluator {
                     )),
                 }
             }
+            Expr::If(expr_if) => {
+                for branch in &expr_if.branches {
+                    if self.eval_expr(&branch.cond)?.is_truthy() {
+                        return self.eval_block(&branch.body);
+                    }
+                }
+                // eval else block
+                if let Some(else_block) = &expr_if.tail {
+                    return self.eval_block(else_block);
+                }
+                return Ok(Value::None);
+            }
+            Expr::Identifier(ident) => match self.env.borrow().get(&ident.name) {
+                Some(v) => Ok(v),
+                None => Err(error(
+                    Span::empty(),
+                    format!("undefined variable: {}", ident.name),
+                )),
+            },
+
             _ => Err(error(Span::empty(), format!("invalid expression"))),
         }
     }
     fn eval_block(&mut self, block: &Block) -> Result<Value> {
-        for b in block.body.iter() {
+        let outer_env = Rc::clone(&self.env);
+        let inner_env = Environment::extend(Rc::clone(&outer_env));
+        self.env = Rc::new(RefCell::new(inner_env));
+
+        for b in &block.body {
             self.eval_stmt(b)?;
         }
 
-        if let Some(tail) = &block.tail {
-            return self.eval_expr(tail);
-        }
+        let result = if let Some(tail) = &block.tail {
+            self.eval_expr(tail)?
+        } else {
+            Value::None
+        };
 
-        Ok(Value::None)
+        self.env = outer_env;
+
+        Ok(result)
     }
     fn eval_stmt(&mut self, stmt: &Stmt) -> Result<()> {
         match stmt {
@@ -208,18 +236,18 @@ impl Evaluator {
                     closure: self.env.borrow().clone(),
                 }));
                 self.env.borrow_mut().assign(&f.name, function);
-                return Ok(());
+                Ok(())
             }
             Stmt::Let(l) => {
                 let val = self.eval_expr(&l.value)?;
                 self.env.borrow_mut().define(l.name.clone(), val);
+                Ok(())
             }
-            // Stmt::Expr(e) => {
-            //     self.eval_expr(*e)?;
-            //     return Ok(())
-            // },
+            Stmt::Expr(e) => {
+                self.eval_expr(e)?; // do nothing and look for potential errors
+                Ok(())
+            }
             _ => panic!("not supported"),
         }
-        Ok(())
     }
 }
