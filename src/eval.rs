@@ -203,8 +203,54 @@ impl Evaluator {
                     format!("undefined variable: {}", ident.name),
                 )),
             },
+            Expr::Call(call) => {
+                let callee = self.eval_expr(&call.callee)?;
+
+                let args = call
+                    .args
+                    .iter()
+                    .map(|a| self.eval_expr(a))
+                    .collect::<Result<Vec<Value>>>()?;
+
+                self.call_function(callee, args)
+            }
 
             _ => Err(error(Span::empty(), format!("invalid expression"))),
+        }
+    }
+    fn call_function(&mut self, callee: Value, args: Vec<Value>) -> Result<Value> {
+        match callee {
+            Value::Function(func) => {
+                if args.len() != func.params.len() {
+                    return Err(error(
+                        Span::empty(),
+                        format!(
+                            "expected {} arguments, but got {}",
+                            func.params.len(),
+                            args.len()
+                        ),
+                    ));
+                }
+
+                let mut func_env = Environment::extend(Rc::new(RefCell::new(func.closure.clone())));
+
+                for (param, arg) in func.params.iter().zip(args) {
+                    func_env.define(param.clone(), arg);
+                }
+
+                let outer_env = Rc::clone(&self.env);
+                self.env = Rc::new(RefCell::new(func_env));
+
+                let result = self.eval_block(&func.body)?;
+
+                self.env = outer_env;
+
+                Ok(result)
+            }
+            _ => Err(error(
+                Span::empty(),
+                format!("{} is not callable", callee.type_name()),
+            )),
         }
     }
     fn eval_block(&mut self, block: &Block) -> Result<Value> {
