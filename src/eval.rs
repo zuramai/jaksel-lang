@@ -27,12 +27,6 @@ pub struct Environment {
 }
 
 #[derive(Clone, Debug)]
-pub struct FunctionDef {
-    body: Block,
-    params: Vec<String>,
-}
-
-#[derive(Clone, Debug)]
 pub struct FunctionValue {
     pub name: String,
     pub params: Vec<String>,
@@ -60,11 +54,11 @@ impl PartialEq for Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Int(i) => write!(f, "{}", i),
-            Value::Str(s) => write!(f, "{}", s),
-            Value::Bool(b) => write!(f, "{}", b),
+            Value::Int(i) => write!(f, "{i}"),
+            Value::Str(s) => write!(f, "{s}"),
+            Value::Bool(b) => write!(f, "{b}"),
             Value::Function(func) => write!(f, "<function {}>", func.name),
-            Value::NativeFunction { name, .. } => write!(f, "<native {}>", name),
+            Value::NativeFunction { name, .. } => write!(f, "<native {name}>"),
             Value::None => write!(f, "none"),
         }
     }
@@ -90,6 +84,12 @@ impl Value {
             Value::NativeFunction { .. } => "native_function",
             Value::None => "none",
         }
+    }
+}
+
+impl Default for Environment {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -141,6 +141,12 @@ fn native_print(args: &[Value]) -> Result<Value> {
     let output: Vec<String> = args.iter().map(|v| v.to_string()).collect();
     println!("{}", output.join(" "));
     Ok(Value::None)
+}
+
+impl Default for Evaluator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Evaluator {
@@ -229,7 +235,7 @@ impl Evaluator {
                 if let Some(else_block) = &expr_if.tail {
                     return self.eval_block(else_block);
                 }
-                return Ok(Value::None);
+                Ok(Value::None)
             }
             Expr::Identifier(ident) => match self.env.borrow().get(&ident.name) {
                 Some(v) => Ok(v),
@@ -250,7 +256,7 @@ impl Evaluator {
                 self.call_function(callee, args)
             }
 
-            _ => Err(error(Span::empty(), format!("invalid expression"))),
+            _ => Err(error(Span::empty(), "invalid expression".to_string())),
         }
     }
     fn call_function(&mut self, callee: Value, args: Vec<Value>) -> Result<Value> {

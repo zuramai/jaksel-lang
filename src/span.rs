@@ -14,12 +14,12 @@ impl Span {
 
     #[inline]
     pub fn start(self) -> usize {
-        return self.start as usize;
+        self.start as usize
     }
 
     #[inline]
     pub fn end(self) -> usize {
-        return self.end as usize;
+        self.end as usize
     }
 }
 

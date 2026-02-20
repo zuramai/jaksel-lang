@@ -1,6 +1,6 @@
 use crate::{
     error::{Result, error},
-    lexer::{self, Token, TokenKind},
+    lexer::{Token, TokenKind},
 };
 
 pub struct Cursor<'src> {
@@ -18,7 +18,7 @@ impl<'src> Cursor<'src> {
         }
     }
     pub fn advance(&mut self) {
-        if &self.position >= &self.tokens.len() {
+        if self.position >= self.tokens.len() {
             return;
         }
         self.position += 1;
