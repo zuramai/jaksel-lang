@@ -297,3 +297,23 @@ impl Evaluator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{cursor::Cursor, lexer::lex, parser::parse_program};
+
+    use super::*;
+
+    fn eval(source: &str) -> Result<Value> {
+        let mut cursor = Cursor::new(source, lex(source));
+        let program = parse_program(&mut cursor)?;
+        dbg!(&program);
+        let mut evaluator = Evaluator::new();
+        evaluator.eval_program(program)
+    }
+
+    #[test]
+    fn test_arithmetic() {
+        assert_eq!(eval("1 tambah 2").unwrap(), Value::Int(3))
+    }
+}

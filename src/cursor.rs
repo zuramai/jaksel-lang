@@ -10,6 +10,13 @@ pub struct Cursor<'src> {
 }
 
 impl<'src> Cursor<'src> {
+    pub fn new(code: &'src str, tokens: Vec<Token>) -> Self {
+        Self {
+            position: 0,
+            code,
+            tokens,
+        }
+    }
     pub fn advance(&mut self) {
         if &self.position >= &self.tokens.len() {
             return;
