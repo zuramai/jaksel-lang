@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::span::Span;
@@ -7,12 +8,15 @@ use crate::{
     error::{Result, error},
 };
 
+pub type NativeFn = fn(&[Value]) -> Result<Value>;
+
 #[derive(Clone, Debug)]
 pub enum Value {
     Int(i64),
     Str(String),
     Bool(bool),
     Function(Rc<FunctionValue>),
+    NativeFunction { name: String, func: NativeFn },
     None,
 }
 
@@ -46,7 +50,22 @@ impl PartialEq for Value {
             (Self::Bool(l), Self::Bool(r)) => l == r,
             (Self::Int(l), Self::Int(r)) => l == r,
             (Self::Str(l), Self::Str(r)) => l == r,
+            (Self::NativeFunction { name: l, .. }, Self::NativeFunction { name: r, .. }) => l == r,
+            (Self::None, Self::None) => true,
             _ => false,
+        }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Int(i) => write!(f, "{}", i),
+            Value::Str(s) => write!(f, "{}", s),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Function(func) => write!(f, "<function {}>", func.name),
+            Value::NativeFunction { name, .. } => write!(f, "<native {}>", name),
+            Value::None => write!(f, "none"),
         }
     }
 }
@@ -58,8 +77,7 @@ impl Value {
             Value::Int(i) => *i != 0,
             Value::Str(s) => !s.is_empty(),
             Value::None => false,
-            Value::Function(_) => true,
-            _ => false,
+            Value::Function(_) | Value::NativeFunction { .. } => true,
         }
     }
 
@@ -69,6 +87,7 @@ impl Value {
             Value::Int(_) => "int",
             Value::Str(_) => "string",
             Value::Function(_) => "function",
+            Value::NativeFunction { .. } => "native_function",
             Value::None => "none",
         }
     }
@@ -118,12 +137,28 @@ impl Environment {
     }
 }
 
+fn native_print(args: &[Value]) -> Result<Value> {
+    let output: Vec<String> = args.iter().map(|v| v.to_string()).collect();
+    println!("{}", output.join(" "));
+    Ok(Value::None)
+}
+
 impl Evaluator {
     pub fn new() -> Self {
         let env = Environment::new();
-        Self {
+        let evaluator = Self {
             env: Rc::new(RefCell::new(env)),
-        }
+        };
+
+        evaluator.env.borrow_mut().define(
+            "print".to_string(),
+            Value::NativeFunction {
+                name: "print".to_string(),
+                func: native_print,
+            },
+        );
+
+        evaluator
     }
 
     pub fn eval_program(&mut self, program: Program) -> Result<Value> {
@@ -247,6 +282,7 @@ impl Evaluator {
 
                 Ok(result)
             }
+            Value::NativeFunction { func, .. } => func(&args),
             _ => Err(error(
                 Span::empty(),
                 format!("{} is not callable", callee.type_name()),
@@ -315,5 +351,30 @@ mod tests {
     #[test]
     fn test_arithmetic() {
         assert_eq!(eval("1 tambah 2").unwrap(), Value::Int(3))
+    }
+
+    #[test]
+    fn test_print_string() {
+        assert_eq!(eval(r#"print("hello")"#).unwrap(), Value::None);
+    }
+
+    #[test]
+    fn test_print_int() {
+        assert_eq!(eval("print(42)").unwrap(), Value::None);
+    }
+
+    #[test]
+    fn test_print_multiple_args() {
+        assert_eq!(eval(r#"print("x", 1 tambah 2, "y")"#).unwrap(), Value::None);
+    }
+
+    #[test]
+    fn test_print_no_args() {
+        assert_eq!(eval("print()").unwrap(), Value::None);
+    }
+
+    #[test]
+    fn test_print_expression() {
+        assert_eq!(eval("print(1 tambah 2)").unwrap(), Value::None);
     }
 }
