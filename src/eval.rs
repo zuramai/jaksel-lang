@@ -157,9 +157,9 @@ impl Evaluator {
         };
 
         evaluator.env.borrow_mut().define(
-            "print".to_string(),
+            "spill".to_string(),
             Value::NativeFunction {
-                name: "print".to_string(),
+                name: "spill".to_string(),
                 func: native_print,
             },
         );
@@ -361,26 +361,26 @@ mod tests {
 
     #[test]
     fn test_print_string() {
-        assert_eq!(eval(r#"print("hello")"#).unwrap(), Value::None);
+        assert_eq!(eval(r#"spill("hello")"#).unwrap(), Value::None);
     }
 
     #[test]
     fn test_print_int() {
-        assert_eq!(eval("print(42)").unwrap(), Value::None);
+        assert_eq!(eval("spill(42)").unwrap(), Value::None);
     }
 
     #[test]
     fn test_print_multiple_args() {
-        assert_eq!(eval(r#"print("x", 1 tambah 2, "y")"#).unwrap(), Value::None);
+        assert_eq!(eval(r#"spill("x", 1 tambah 2, "y")"#).unwrap(), Value::None);
     }
 
     #[test]
     fn test_print_no_args() {
-        assert_eq!(eval("print()").unwrap(), Value::None);
+        assert_eq!(eval("spill()").unwrap(), Value::None);
     }
 
     #[test]
     fn test_print_expression() {
-        assert_eq!(eval("print(1 tambah 2)").unwrap(), Value::None);
+        assert_eq!(eval("spill(1 tambah 2)").unwrap(), Value::None);
     }
 }
